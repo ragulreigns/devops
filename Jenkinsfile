@@ -11,8 +11,8 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                // Clone the GitHub repository
-                git 'https://github.com/ragulreigns/devops.git'
+                // Clone the GitHub repository with credentials
+                git credentialsId: 'github-credentials', url: 'https://github.com/ragulreigns/devops.git'
             }
         }
 
@@ -31,9 +31,15 @@ pipeline {
             }
             steps {
                 script {
-                    // Tag and push to dev Docker Hub repository
-                    sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DEV_REPO:latest"
-                    sh "docker push $DOCKER_REGISTRY/$DEV_REPO:latest"
+                    // Use withCredentials to securely pass Docker Hub credentials
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        // Docker login to Docker Hub
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+
+                        // Tag and push to dev Docker Hub repository
+                        sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DEV_REPO:latest"
+                        sh "docker push $DOCKER_REGISTRY/$DEV_REPO:latest"
+                    }
                 }
             }
         }
@@ -44,9 +50,15 @@ pipeline {
             }
             steps {
                 script {
-                    // Tag and push to prod Docker Hub repository
-                    sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$PROD_REPO:latest"
-                    sh "docker push $DOCKER_REGISTRY/$PROD_REPO:latest"
+                    // Use withCredentials to securely pass Docker Hub credentials
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        // Docker login to Docker Hub
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+
+                        // Tag and push to prod Docker Hub repository
+                        sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$PROD_REPO:latest"
+                        sh "docker push $DOCKER_REGISTRY/$PROD_REPO:latest"
+                    }
                 }
             }
         }
