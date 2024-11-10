@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t ragul11/devops-build:latest .
+docker build -t project .
