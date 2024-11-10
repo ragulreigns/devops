@@ -15,6 +15,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Dynamically choose the image tag based on the branch name
                     def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
                     if (branchName == 'dev') {
                         // Build image for the dev branch
@@ -43,20 +44,6 @@ pipeline {
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    // Use when to ensure the pipeline only runs for the correct branches
-    post {
-        success {
-            script {
-                def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
-                if (branchName == 'master') {
-                    echo "Build and deployment for master completed successfully."
-                } else if (branchName == 'dev') {
-                    echo "Build for dev branch completed successfully."
                 }
             }
         }
