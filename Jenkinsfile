@@ -8,6 +8,13 @@ pipeline {
             }
         }
 
+        stage('Set Permissions') {
+            steps {
+                // Ensure that build.sh and deploy.sh have execute permissions
+                sh 'chmod +x build.sh deploy.sh'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 // Use the build.sh script to build the Docker image
