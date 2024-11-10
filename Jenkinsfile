@@ -4,22 +4,27 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'master', url: 'https://github.com/ragulreigns/devops-build.git'
+                git credentialsId: 'github-credentials', branch: 'dev', url: 'https://github.com/ragulreigns/devops.git'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("ragul11/devops-build:prod")
+                    // Building the Docker image
+                    docker.build("ragul11/devops-build:dev")
                 }
             }
         }
+
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([string(credentialsId: 'docker-hub-credentials', variable: 'DOCKER_HUB_PASSWORD')]) {
+                // Handling credentials properly
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     script {
+                        // Logging in and pushing to Docker Hub
                         docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                            docker.image("ragul11/devops-build:prod").push()
+                            docker.image("ragul11/devops-build:dev").push()
                         }
                     }
                 }
