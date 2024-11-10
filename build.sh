@@ -1,3 +1,4 @@
 #!/bin/bash
 
-docker build -t project .
+IMAGE_NAME="ragul11/dev:latest"
+docker build -t $IMAGE_NAME .
