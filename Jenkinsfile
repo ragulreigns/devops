@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_USERNAME = credentials('dockerhub-username')
-        DOCKER_PASSWORD = credentials('dockerhub-password')
-    }
-
     stages {
         stage('Clone Repository') {
             steps {
@@ -15,7 +10,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Use the build.sh script
+                // Use the build.sh script to build the Docker image
                 sh './build.sh dev'
             }
         }
@@ -25,8 +20,11 @@ pipeline {
                 branch 'dev'
             }
             steps {
-                // Use the deploy.sh script to push to dev repo
-                sh './deploy.sh dev'
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                    // Use deploy.sh to push to dev repo
+                    sh './deploy.sh dev'
+                }
             }
         }
 
@@ -35,8 +33,11 @@ pipeline {
                 branch 'master'
             }
             steps {
-                // Use the deploy.sh script to push to prod repo
-                sh './deploy.sh prod'
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                    // Use deploy.sh to push to prod repo
+                    sh './deploy.sh prod'
+                }
             }
         }
     }
