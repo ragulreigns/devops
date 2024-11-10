@@ -4,46 +4,47 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git credentialsId: 'github-credentials', branch: '*/dev', url: 'https://github.com/ragulreigns/devops.git'
-            }
-        }
-        stage('Build Docker Image') {
-            steps {
                 script {
-                    docker.build("ragul11/devops-build:prod")
+                    
+                    def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                    
+                    git credentialsId: 'github-credentials', branch: branchName, url: 'https://github.com/ragulreigns/devops.git'
                 }
             }
         }
-        stage('Push to Docker Hub') {
+
+        stage('Build Docker Image') {
             steps {
                 script {
-                    def branchName = env.GIT_BRANCH
-                    if (branchName == 'origin/dev') {
-                        // Push to dev repository if it's the dev branch
-                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                            script {
-                                docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                                    docker.image("ragul11/devops-build:prod").push("dev")
-                                }
-                            }
-                        }
-                    } else if (branchName == 'origin/master') {
-                        // Push to prod repository if it's the master branch
-                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                            script {
-                                docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                                    docker.image("ragul11/devops-build:prod").push("prod")
-                                }
+                    // Get the branch name dynamically
+                    def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                    // Build the Docker image depending on the branch
+                    if (branchName == 'dev') {
+                        docker.build("ragul11/devops-build:dev")
+                    } else if (branchName == 'master') {
+                        docker.build("ragul11/devops-build:prod")
+                    }
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    script {
+                        // Get the branch name dynamically
+                        def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                        // Log in to Docker Hub and push the image based on the branch
+                        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                            if (branchName == 'dev') {
+                                docker.image("ragul11/devops-build:dev").push()
+                            } else if (branchName == 'master') {
+                                docker.image("ragul11/devops-build:prod").push()
                             }
                         }
                     }
                 }
             }
-        }
-    }
-    post {
-        always {
-            cleanWs()
         }
     }
 }
