@@ -19,10 +19,10 @@ pipeline {
                     def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
                     if (branchName == 'dev') {
                         // Build image for the dev branch
-                        docker.build("ragul11/devops-build:dev")
+                        docker.build("ragul11/dev:latest")
                     } else if (branchName == 'master') {
                         // Build image for the master branch (prod)
-                        docker.build("ragul11/devops-build:prod")
+                        docker.build("ragul11/prod:latest")
                     }
                 }
             }
@@ -37,10 +37,10 @@ pipeline {
                         docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
                             if (branchName == 'dev') {
                                 // Push to the dev repository on Docker Hub if the branch is 'dev'
-                                docker.image("ragul11/devops-build:dev").push()
+                                docker.image("ragul11/dev:latest").push()
                             } else if (branchName == 'master') {
                                 // Push to the prod repository on Docker Hub if the branch is 'master'
-                                docker.image("ragul11/devops-build:prod").push()
+                                docker.image("ragul11/prod:latest").push()
                             }
                         }
                     }
