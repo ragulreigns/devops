@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git credentialsId: 'github-credentials', branch: 'master', url: 'https://github.com/ragulreigns/devops-build.git'
+                git credentialsId: 'github-credentials', branch: 'master', url: 'https://github.com/ragulreigns/devops.git'
             }
         }
         stage('Build Docker Image') {
