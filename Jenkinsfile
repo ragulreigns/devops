@@ -51,6 +51,7 @@ pipeline {
 
     post {
         always {
+            // Clean up image from local Docker
             sh 'docker rmi project || true'
         }
     }
