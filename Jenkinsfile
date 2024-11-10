@@ -4,7 +4,13 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
+                // Clone the repository and checkout the branch that triggered the pipeline
                 git 'https://github.com/ragulreigns/devops.git'
+                script {
+                    // Ensure the correct branch is checked out
+                    def branch = env.GIT_BRANCH ?: 'dev'  // Default to 'dev' if not set
+                    sh "git checkout ${branch}"
+                }
             }
         }
 
@@ -17,19 +23,22 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Use the build.sh script to build the Docker image
-                sh './build.sh dev'
+                // Build the Docker image using the build script
+                script {
+                    def branch = env.GIT_BRANCH ?: 'dev'
+                    sh "./build.sh ${branch}"
+                }
             }
         }
 
         stage('Push Docker Image to Docker Hub (Dev)') {
             when {
-                branch 'dev'
+                branch 'dev'  // Trigger only if the branch is 'dev'
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
-                    // Use deploy.sh to push to dev repo
+                    // Push the image to the dev repository
                     sh './deploy.sh dev'
                 }
             }
@@ -37,12 +46,12 @@ pipeline {
 
         stage('Push Docker Image to Docker Hub (Prod)') {
             when {
-                branch 'master'
+                branch 'master'  // Trigger only if the branch is 'master'
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
-                    // Use deploy.sh to push to prod repo
+                    // Push the image to the prod repository
                     sh './deploy.sh prod'
                 }
             }
@@ -51,7 +60,7 @@ pipeline {
 
     post {
         always {
-            // Clean up image from local Docker
+            // Clean up local Docker image after the build
             sh 'docker rmi project || true'
         }
     }
