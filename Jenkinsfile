@@ -7,9 +7,8 @@ pipeline {
                 // Clone the repository and checkout the branch that triggered the pipeline
                 git 'https://github.com/ragulreigns/devops.git'
                 script {
-                    // Ensure the correct branch is checked out
                     def branch = env.GIT_BRANCH ?: 'dev'  // Default to 'dev' if not set
-                    sh "git checkout ${branch}"
+                    sh "git checkout ${branch}"  // Checkout the triggered branch directly
                 }
             }
         }
@@ -23,7 +22,6 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Build the Docker image using the build script
                 script {
                     def branch = env.GIT_BRANCH ?: 'dev'
                     sh "./build.sh ${branch}"
@@ -33,7 +31,7 @@ pipeline {
 
         stage('Push Docker Image to Docker Hub (Dev)') {
             when {
-                branch 'dev'  // Trigger only if the branch is 'dev'
+                branch 'dev'  // Only runs when the branch is 'dev'
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -46,7 +44,7 @@ pipeline {
 
         stage('Push Docker Image to Docker Hub (Prod)') {
             when {
-                branch 'master'  // Trigger only if the branch is 'master'
+                branch 'master'  // Only runs when the branch is 'master'
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
