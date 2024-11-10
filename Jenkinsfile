@@ -1,12 +1,18 @@
 pipeline {
     agent any
 
+    triggers {
+        // Automatically trigger on GitHub push events (for both dev and master)
+        githubPush()
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
                 script {
                     // Dynamically select the branch based on the event trigger
-                    def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                    def branchName = env.BRANCH_NAME
+                    echo "Cloning branch: ${branchName}"
                     git credentialsId: 'github-credentials', branch: branchName, url: 'https://github.com/ragulreigns/devops.git'
                 }
             }
@@ -15,7 +21,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                    def branchName = env.BRANCH_NAME
+                    echo "Building Docker image for branch: ${branchName}"
                     if (branchName == 'dev') {
                         // Build image for the dev branch
                         docker.build("ragul11/dev:latest")
@@ -30,7 +37,7 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                    def branchName = env.BRANCH_NAME
                     // Use credentials to login to Docker Hub
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
@@ -48,16 +55,22 @@ pipeline {
         }
     }
 
-    // Use when to ensure the pipeline only runs for the correct branches
     post {
         success {
             script {
-                def branchName = env.GIT_BRANCH.replaceAll("origin/", "")
+                def branchName = env.BRANCH_NAME
                 if (branchName == 'master') {
                     echo "Build and deployment for master completed successfully."
                 } else if (branchName == 'dev') {
                     echo "Build for dev branch completed successfully."
                 }
+            }
+        }
+
+        failure {
+            script {
+                def branchName = env.BRANCH_NAME
+                echo "Build failed for branch: ${branchName}"
             }
         }
     }
