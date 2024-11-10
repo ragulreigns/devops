@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     // Building the Docker image
-                    docker.build("ragul11/devops-build:dev")
+                    docker.build("ragul11/dev:latest")
                 }
             }
         }
@@ -24,7 +24,7 @@ pipeline {
                     script {
                         // Logging in and pushing to Docker Hub
                         docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                            docker.image("ragul11/devops-build:dev").push()
+                            docker.image("ragul11/dev:latest").push()
                         }
                     }
                 }
