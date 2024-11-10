@@ -2,26 +2,21 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'project'
-        DOCKER_REGISTRY = 'docker.io'
-        DEV_REPO = 'ragul11/dev'
-        PROD_REPO = 'ragul11/prod'
+        DOCKER_USERNAME = credentials('dockerhub-username')
+        DOCKER_PASSWORD = credentials('dockerhub-password')
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                // Clone the GitHub repository with credentials
-                git credentialsId: 'github-credentials', url: 'https://github.com/ragulreigns/devops.git'
+                git 'https://github.com/ragulreigns/devops.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Build Docker image
-                    sh 'docker build -t $DOCKER_IMAGE .'
-                }
+                // Use the build.sh script
+                sh './build.sh dev'
             }
         }
 
@@ -30,17 +25,8 @@ pipeline {
                 branch 'dev'
             }
             steps {
-                script {
-                    // Use withCredentials to securely pass Docker Hub credentials
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        // Docker login to Docker Hub
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-
-                        // Tag and push to dev Docker Hub repository
-                        sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DEV_REPO:latest"
-                        sh "docker push $DOCKER_REGISTRY/$DEV_REPO:latest"
-                    }
-                }
+                // Use the deploy.sh script to push to dev repo
+                sh './deploy.sh dev'
             }
         }
 
@@ -49,25 +35,15 @@ pipeline {
                 branch 'master'
             }
             steps {
-                script {
-                    // Use withCredentials to securely pass Docker Hub credentials
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        // Docker login to Docker Hub
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-
-                        // Tag and push to prod Docker Hub repository
-                        sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$PROD_REPO:latest"
-                        sh "docker push $DOCKER_REGISTRY/$PROD_REPO:latest"
-                    }
-                }
+                // Use the deploy.sh script to push to prod repo
+                sh './deploy.sh prod'
             }
         }
     }
 
     post {
         always {
-            // Clean up the Docker images after the build
-            sh 'docker rmi $DOCKER_IMAGE || true'
+            sh 'docker rmi project || true'
         }
     }
 }
