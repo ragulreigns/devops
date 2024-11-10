@@ -4,31 +4,46 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git credentialsId: 'github-credentials', branch: 'dev', url: 'https://github.com/ragulreigns/devops.git'
+                git credentialsId: 'github-credentials', branch: '*/dev', url: 'https://github.com/ragulreigns/devops.git'
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Building the Docker image
-                    docker.build("ragul11/devops-build:dev")
+                    docker.build("ragul11/devops-build:prod")
                 }
             }
         }
-
         stage('Push to Docker Hub') {
             steps {
-                // Handling credentials properly
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    script {
-                        // Logging in and pushing to Docker Hub
-                        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                            docker.image("ragul11/devops-build:dev").push()
+                script {
+                    def branchName = env.GIT_BRANCH
+                    if (branchName == 'origin/dev') {
+                        // Push to dev repository if it's the dev branch
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            script {
+                                docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                                    docker.image("ragul11/devops-build:prod").push("dev")
+                                }
+                            }
+                        }
+                    } else if (branchName == 'origin/master') {
+                        // Push to prod repository if it's the master branch
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            script {
+                                docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                                    docker.image("ragul11/devops-build:prod").push("prod")
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }
