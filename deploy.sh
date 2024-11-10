@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Start the container
+docker-compose down
 docker-compose up -d

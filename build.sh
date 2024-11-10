@@ -1,4 +1,3 @@
 #!/bin/bash
 
-# Build the Docker image
-docker build -t devops-build:latest .
+docker build -t ragul11/devops-build:latest .
